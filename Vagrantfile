@@ -37,13 +37,13 @@ Vagrant.configure("2") do |config|
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
   # your network.
-  # config.vm.network "public_network"
+  config.vm.network "public_network"
 
   # Share an additional folder to the guest VM. The first argument is
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder "./", "/vagrant"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -67,4 +67,43 @@ Vagrant.configure("2") do |config|
   #   apt-get update
   #   apt-get install -y apache2
   # SHELL
+
+config.vm.provision "shell", inline: <<-SHELL
+
+
+echo "Upgrading dnf packages..."
+dnf upgrade -y
+
+echo "Installing apache..."
+dnf install httpd -y
+echo "Apache successfully installed!"
+httpd -v
+
+echo "Starting apache..."
+systemctl enable httpd
+systemctl start httpd
+systemctl status httpd
+
+echo "Opening firewall port 80 (HTTP)..."
+firewall-cmd --zone=public --permanent --add-service=http
+firewall-cmd --reload
+
+echo "Installing PHP 8.1..."
+dnf install https://rpms.remirepo.net/enterprise/remi-release-8.rpm -y
+dnf install epel-release -y
+dnf module enable php:remi-8.1 -y
+dnf install php -y
+echo "PHP installed successfully!
+php -v
+
+echo "Installing Composer..."
+dnf install composer -y
+echo "Composer installed successfully!"
+composer -V
+
+echo "Creating a new Symfony project at /vagrant/symfony_app..."
+echo "WIP"
+
+
+SHELL
 end
